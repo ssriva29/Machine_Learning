@@ -1,0 +1,423 @@
+---
+title: "Assignment2"
+author: "Shubhangi Srivastava"
+date: "06/10/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Q9 This question involves the use of multiple linear regression on the Auto data set.
+
+### 9(a) Produce a scatterplot matrix which includes all of the variables in the data set.
+
+```{r A, echo=TRUE}
+
+library(ISLR)
+data(Auto)
+pairs(Auto)
+```
+
+
+
+
+
+
+### 9(b) Compute the matrix of correlations between the variables using the function cor(). You will need to exclude the name variable, which is qualitative.
+
+```{r B, echo=TRUE}
+names(Auto)
+cor(Auto[1:8])
+
+```
+### 9(c) Use the lm() function to perform a multiple linear regression with mpg as the response and all other variables except name as the predictors. Use the summary() function to print the results. Comment on the output. For instance:
+### i. Is there a relationship between the predictors and the re- sponse?
+### ii. Which predictors appear to have a statistically significant relationship to the response?
+### iii. What does the coefficient for the year variable suggest?
+
+```{r C, echo=TRUE}
+multipleregression <- lm(mpg~.-name,data = Auto)
+summary(multipleregression)
+```
+**Interpretations from output :**
+
+
+**c.1 The p-value corresponding to the F-statistic is 2.2 x 10^-16, this indicates a clear evidence of a relationship between “mpg” and the other predictors.**
+
+**c.2 The p-values associated with each predictor’s t-statistic are statistically significant except “cylinders”, “horsepower” and “acceleration”.**
+
+**c.3 The coefficient ot the “year” variable suggests that an increase of 1 unit in  year increases mpg by 0.750773.So cars become more fuel efficient every coming year.**
+
+
+### 9(d) Use the plot() function to produce diagnostic plots of the linear regression fit. Comment on any problems you see with the fit. Do the residual plots suggest any unusually large outliers? Does the leverage plot identify any observations with unusually high leverage?
+```{r D, echo=TRUE}
+par(mfrow=c(2,2))
+plot(multipleregression)
+```
+
+
+
+
+
+
+
+
+**Interpretations from output :**
+
+**The plot of residuals versus fitted values indicates the presence of non linearity in the data.**
+**The plot of standardized residuals versus leverage indicates the presence of outliers.**
+**There is one high leverage point (point 14).**
+
+### 9(e) Use the * and : symbols to fit linear regression models with interaction effects. Do any interactions appear to be statistically significant?
+```{r E, echo=TRUE}
+interaction <- lm(mpg ~ cylinders * displacement+displacement * weight, data = Auto[, 1:8])
+summary(interaction)
+```
+**Interpretations from output :**
+**The p-values shows that interaction between displacement and weight is statistically signifcant, while the interaction between cylinders and displacement is not.**
+
+### 9(f) Try a few different transformations of the variables, such as log(X), √X, X2. Comment on your findings.
+
+```{r F, echo=TRUE}
+par(mfrow = c(2, 2))
+plot(log(Auto$horsepower), Auto$mpg)
+plot(sqrt(Auto$horsepower), Auto$mpg)
+plot((Auto$horsepower)^2, Auto$mpg)
+```
+
+**Interpretations from output :**
+**The log transformation gives the most linear looking plot.**
+
+### Q15 This problem involves the Boston data set, which we saw in the lab for this chapter. We will now try to predict per capita crime rate using the other variables in this data set. In other words, per capita crime rate is the response, and the other variables are the predictors.
+
+### (a) For each predictor, fit a simple linear regression model to predict the response. Describe your results. In which of the models is there a statistically significant association between the predictor and the response? Create some plots to back up your assertions.
+
+
+```{r AA, echo=TRUE}
+library(MASS)
+data("Boston")
+pairs(Boston)
+fit.zn <- lm(crim ~ zn,data = Boston)
+summary(fit.zn)
+fit.indus <- lm(crim ~ indus,data = Boston)
+summary(fit.indus)
+fit.chas <- lm(crim ~ chas,data = Boston)
+summary(fit.chas)
+fit.nox <- lm(crim ~ nox,data = Boston)
+summary(fit.nox)
+fit.rm <- lm(crim ~ rm,data = Boston)
+summary(fit.rm)
+fit.age <- lm(crim ~ age,data = Boston)
+summary(fit.age)
+fit.dis <- lm(crim ~ dis,data = Boston)
+summary(fit.dis)
+fit.rad <- lm(crim ~ rad,data = Boston)
+summary(fit.rad)
+fit.tax <- lm(crim ~ tax,data = Boston)
+summary(fit.tax)
+fit.ptratio <- lm(crim ~ ptratio,data = Boston)
+summary(fit.ptratio)
+fit.black <- lm(crim ~ black,data = Boston)
+summary(fit.black)
+fit.lstat <- lm(crim ~ lstat,data = Boston)
+summary(fit.lstat)
+fit.medv <- lm(crim ~ medv,data = Boston)
+summary(fit.medv)
+```
+**Interpretations from output :**
+**By performing the hypothesis test we can say that all predictors have a p-value less than 0.05 except “chas”, so we may conclude that there is a statistically significant association between each predictor and the response except for the “chas” predictor.**
+
+```{r AA1, echo=TRUE}
+par(mfrow=c(2,2))
+plot(Boston$chas, Boston$crim)
+plot(Boston$zn, Boston$crim)
+plot(Boston$rm, Boston$crim)
+plot(Boston$age, Boston$crim)
+```
+
+
+
+
+### (b) Fit a multiple regression model to predict the response using all of the predictors. Describe your results. For which predictors can we reject the null hypothesis H0 : βj = 0?
+```{r BB, echo=TRUE}
+fit.all <- lm(crim ~ ., data = Boston)
+summary(fit.all)
+```
+**Interpretations from output :**
+**In the presence of other predictors wecan reject the null hypothesis for “zn”, “dis”, “rad”, “black” and “medv”.**
+
+
+### (c) How do your results from (a) compare to your results from (b)? Create a plot displaying the univariate regression coefficients from (a) on the x-axis, and the multiple regression coefficients from (b) on the y-axis. That is, each predictor is displayed as a single point in the plot. Its coefficient in a simple linear regres- sion model is shown on the x-axis, and its coefficient estimate in the multiple linear regression model is shown on the y-axis.
+```{r CC, echo=TRUE}
+simple.reg <- vector("numeric",0)
+simple.reg <- c(simple.reg, fit.zn$coefficient[2])
+simple.reg <- c(simple.reg, fit.indus$coefficient[2])
+simple.reg <- c(simple.reg, fit.chas$coefficient[2])
+simple.reg <- c(simple.reg, fit.nox$coefficient[2])
+simple.reg <- c(simple.reg, fit.rm$coefficient[2])
+simple.reg <- c(simple.reg, fit.age$coefficient[2])
+simple.reg <- c(simple.reg, fit.dis$coefficient[2])
+simple.reg <- c(simple.reg, fit.rad$coefficient[2])
+simple.reg <- c(simple.reg, fit.tax$coefficient[2])
+simple.reg <- c(simple.reg, fit.ptratio$coefficient[2])
+simple.reg <- c(simple.reg, fit.black$coefficient[2])
+simple.reg <- c(simple.reg, fit.lstat$coefficient[2])
+simple.reg <- c(simple.reg, fit.medv$coefficient[2])
+mult.reg <- vector("numeric", 0)
+mult.reg <- c(mult.reg, fit.all$coefficients)
+mult.reg <- mult.reg[-1]
+plot(simple.reg, mult.reg, col = "blue")
+```
+
+
+
+**Interpretations from output :**
+**There is a difference between the simple and multiple regression coefficients. This difference is due to the fact that in the simple regression case, the slope term represents the average effect of an increase in the predictor, ignoring other predictors. In contrast, in the multiple regression case, the slope term represents the average effect of an increase in the predictor, while holding other predictors fixed. It does make sense for the multiple regression to suggest no relationship between the response and some of the predictors while the simple linear regression implies the opposite because the correlation between the predictors show some strong relationships between some of the predictors.**
+```{r CC1, echo=TRUE}
+cor(Boston[-c(1, 4)])
+```
+**Interpretations from output :**
+**Here when “age” is high,“dis” is low,so in simple linear regression which only examines “crim” versus “age”, we observe that higher values of “age” are associated with higher values of “crim”, even though “age” does not actually affect “crim” when it is actually the effect of “dis”.**
+
+### (d) Is there evidence of non-linear association between any of the predictors and the response? To answer this question, for each predictor X, fit a model of the form Y = β0 +β1X +β2X2 +β3X3 +ε.
+```{r DD, echo=TRUE}
+fit.zn2 <- lm(crim ~ poly(zn, 3),data = Boston)
+summary(fit.zn2)
+fit.indus2 <- lm(crim ~ poly(indus, 3),data = Boston)
+summary(fit.indus2)
+fit.nox2 <- lm(crim ~ poly(nox, 3),data = Boston)
+summary(fit.nox2)
+fit.rm2 <- lm(crim ~ poly(rm, 3),data = Boston)
+summary(fit.rm2)
+fit.age2 <- lm(crim ~ poly(age, 3),data = Boston)
+summary(fit.age2)
+fit.dis2 <- lm(crim ~ poly(dis, 3),data = Boston)
+summary(fit.dis2)
+fit.rad2 <- lm(crim ~ poly(rad, 3),data = Boston)
+summary(fit.rad2)
+fit.tax2 <- lm(crim ~ poly(tax, 3),data = Boston)
+summary(fit.tax2)
+fit.ptratio2 <- lm(crim ~ poly(ptratio, 3),data = Boston)
+summary(fit.ptratio2)
+fit.black2 <- lm(crim ~ poly(black, 3),data = Boston)
+summary(fit.black2)
+fit.lstat2 <- lm(crim ~ poly(lstat, 3),data = Boston)
+summary(fit.lstat2)
+fit.medv2 <- lm(crim ~ poly(medv, 3),data = Boston)
+summary(fit.medv2)
+```
+**Interpretations from output :**
+**The p value shows that the cubic coefficient is statistically significant for “indus”, “nox”, “age”, “dis”, “ptratio” and “medv” as predictor.**
+**The p value shows that the cubic coefficient is not statistically significantfor “zn”, “rm”, “rad”, “tax” and “lstat” as predictor.**
+**The p value shows that the quadratic and the cubic coefficient is not statistically significant  for “black” as predictor.**
+
+### Ex. 2.8 Compare the classification performance of linear regression and k– nearest neighbor classification on the zipcode data. In particular, consider only the 2’s and 3’s, and k = 1, 3, 5, 7 and 15. Show both the training and test error for each choice.
+```{r AAA, echo=TRUE}
+training <- as.matrix(read.table("~/Downloads/zip.train"))
+test <- as.matrix(read.table("~/Downloads/zip.test"))
+
+select_2_3_training <-which(training[,1]== 2 | training[,1]== 3)
+
+select_2_3_test <-which(test[,1]== 2 | test[,1]== 3)
+length(select_2_3_test)
+
+finaltraining <-data.frame(training[select_2_3_training,])
+
+#divide in training y and x var for knn
+x_training <- finaltraining[,-1]
+y_training <- finaltraining[,1]
+
+#divide in test y and x var for knn
+finaltest <-data.frame(test[select_2_3_test,])
+
+y_test <- finaltest[,1]
+x_test <- finaltest[, -1]
+
+#Run multiple regression
+lm_regression <- lm(V1 ~.,data =finaltraining)
+summary(lm_regression)
+
+#Run prediction on train data 
+predict_training <-sapply(predict(lm_regression,newdata = finaltraining),round)
+
+confusion_matrix_training <- table(predict_training, y_training) 
+
+accuracy_training <- sum(diag(confusion_matrix_training))/sum(confusion_matrix_training)
+accuracy_training
+
+error_training <- 1 - accuracy_training
+error_training
+
+
+#Run prediction on test data 
+predict_test <-sapply(predict(lm_regression,newdata = finaltest),round)
+
+confusion_matrix_test <- table(predict_test, y_test) 
+
+accuracy_test <- sum(diag(confusion_matrix_test))/sum(confusion_matrix_test)
+accuracy_test
+
+error_test <- 1 - accuracy_test
+error_test
+
+
+
+#knn for k =1
+
+library(class)
+knn_1_test <-knn(x_training,x_test,cl= y_training,k = 1, use.all = TRUE) 
+knn_1_test
+
+confusion_matrix_test_knn_1 <- table(knn_1_test,y_test)
+
+accuracy_test_knn_1 <- sum(diag(confusion_matrix_test_knn_1))/sum(confusion_matrix_test_knn_1)
+accuracy_test_knn_1
+
+error_test_knn_1 <- 1 - accuracy_test_knn_1
+error_test_knn_1   
+
+
+library(class) 
+knn_1_training <-knn(x_training,x_training,cl= y_training,k = 1, use.all = TRUE) 
+knn_1_training
+
+confusion_matrix_training_knn_1 <- table(knn_1_training,y_training)
+
+accuracy_training_knn_1 <- sum(diag(confusion_matrix_training_knn_1))/sum(confusion_matrix_training_knn_1)
+accuracy_training_knn_1 
+
+error_training_knn_1 <- 1 - accuracy_training_knn_1
+error_training_knn_1
+
+
+#knn for k =3
+
+library(class)
+knn_3_test <-knn(x_training,x_test,cl= y_training,k = 3, use.all = TRUE) 
+knn_3_test
+
+confusion_matrix_test_knn_3 <- table(knn_3_test,y_test)
+
+accuracy_test_knn_3 <- sum(diag(confusion_matrix_test_knn_3))/sum(confusion_matrix_test_knn_3)
+accuracy_test_knn_3
+
+error_test_knn_3 <- 1 - accuracy_test_knn_3
+error_test_knn_3
+
+
+library(class) 
+knn_3_training <-knn(x_training,x_training,cl= y_training,k = 3, use.all = TRUE) 
+knn_3_training
+
+confusion_matrix_training_knn_3 <- table(knn_3_training,y_training)
+
+accuracy_training_knn_3 <- sum(diag(confusion_matrix_training_knn_3))/sum(confusion_matrix_training_knn_3)
+accuracy_training_knn_3 
+
+error_training_knn_3 <- 1 - accuracy_training_knn_3
+error_training_knn_3
+
+#knn for k =5
+
+library(class)
+knn_5_test <-knn(x_training,x_test,cl= y_training,k = 5, use.all = TRUE) 
+knn_5_test
+
+confusion_matrix_test_knn_5 <- table(knn_5_test,y_test)
+
+accuracy_test_knn_5 <- sum(diag(confusion_matrix_test_knn_5))/sum(confusion_matrix_test_knn_5)
+accuracy_test_knn_5 
+
+error_test_knn_5 <- 1 - accuracy_test_knn_5
+error_test_knn_5
+
+
+library(class) 
+knn_5_training <-knn(x_training,x_training,cl= y_training,k = 5, use.all = TRUE) 
+knn_5_training
+
+confusion_matrix_training_knn_5 <- table(knn_5_training,y_training)
+
+accuracy_training_knn_5 <- sum(diag(confusion_matrix_training_knn_5))/sum(confusion_matrix_training_knn_5)
+accuracy_training_knn_5 
+
+error_training_knn_5 <- 1 - accuracy_training_knn_5
+error_training_knn_5
+
+#knn for k =7
+
+library(class)
+knn_7_test <-knn(x_training,x_test,cl= y_training,k = 7, use.all = TRUE) 
+knn_7_test
+
+confusion_matrix_test_knn_7 <- table(knn_7_test,y_test)
+
+accuracy_test_knn_7 <- sum(diag(confusion_matrix_test_knn_7))/sum(confusion_matrix_test_knn_7)
+accuracy_test_knn_7
+
+error_test_knn_7 <- 1 - accuracy_test_knn_7
+error_test_knn_7
+
+
+library(class) 
+knn_7_training <-knn(x_training,x_training,cl= y_training,k = 7, use.all = TRUE) 
+knn_7_training
+
+confusion_matrix_training_knn_7 <- table(knn_7_training,y_training)
+
+accuracy_training_knn_7 <- sum(diag(confusion_matrix_training_knn_7))/sum(confusion_matrix_training_knn_7)
+accuracy_training_knn_7 
+
+error_training_knn_7 <- 1 - accuracy_training_knn_7
+error_training_knn_7
+
+
+#knn for k =15
+
+library(class)
+knn_15_test <-knn(x_training,x_test,cl= y_training,k = 15, use.all = TRUE) 
+knn_15_test
+
+confusion_matrix_test_knn_15 <- table(knn_15_test,y_test)
+
+accuracy_test_knn_15 <- sum(diag(confusion_matrix_test_knn_15))/sum(confusion_matrix_test_knn_15)
+accuracy_test_knn_15 
+
+error_test_knn_15 <- 1 - accuracy_test_knn_15
+error_test_knn_15
+
+
+library(class) 
+knn_15_training <-knn(x_training,x_training,cl= y_training,k = 15, use.all = TRUE) 
+knn_15_training
+
+confusion_matrix_training_knn_15 <- table(knn_15_training,y_training)
+
+accuracy_training_knn_15 <- sum(diag(confusion_matrix_training_knn_15))/sum(confusion_matrix_training_knn_15)
+accuracy_training_knn_15 
+
+error_training_knn_15 <- 1 - accuracy_training_knn_15
+error_training_knn_15
+
+
+x_axis = c(1,3,5,7,15)
+y_axis_training = c(error_training_knn_1,error_training_knn_3,error_training_knn_5,error_training_knn_7, error_training_knn_15)
+y_axis_test = c(error_test_knn_1, error_test_knn_3 ,error_test_knn_5,error_test_knn_7,error_test_knn_15)
+
+
+plot_data = data.frame(x_axis,y_axis_test,y_axis_training)
+
+library(ggplot2)
+
+ggplot(plot_data , aes(x = x_axis, y = y_axis_test)) + geom_line(aes(col = "Test_KNN")) + xlim(c(0,16)) + ylim(c(0,0.05)) +
+  geom_line(y = y_axis_training, aes(col = "Train_KNN")) + 
+  geom_hline(size=1.5,linetype='dashed',aes(yintercept = error_test, col = "Test_lm")) + 
+  geom_hline(aes(col = "Train_lm", yintercept = error_training),size=1.5,linetype='dotdash',) + 
+  scale_color_manual(name ="Labels", values = c(Test_lm = "blue", Train_lm = "green", Test_KNN = "red" , 
+                                                Train_KNN = "orange")) +
+  ggtitle("Error rate for linear regression vs knn") +
+  xlab("K values") + ylab("Error rates")
+
+```
