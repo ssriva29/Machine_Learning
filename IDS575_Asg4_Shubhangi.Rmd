@@ -1,0 +1,302 @@
+---
+title: "IDS575_Assignment_4"
+author: "Shubhangi Srivastava"
+date: "17/11/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Q1 Draw an example (of your own invention) of a partition of two- dimensional feature space that could result from recursive binary splitting. Your example should contain at least six regions. Draw a decision tree corresponding to this partition. Be sure to label all as- pects of your figures, including the regions R1, R2, . . ., the cutpoints t1,t2,..., and so forth.
+```{r A, echo=TRUE}
+par(xpd = NA)
+plot(NA, NA, type = "n", xlim = c(0, 100), ylim = c(0, 100), xlab = "X", ylab = "Y")
+# t1: x = 40; (40, 0) (40, 100)
+lines(x = c(40, 40), y = c(0, 100))
+text(x = 40, y = 108, labels = c("t1"), col = "red")
+# t2: y = 75; (0, 75) (40, 75)
+lines(x = c(0, 40), y = c(75, 75))
+text(x = -8, y = 75, labels = c("t2"), col = "red")
+# t3: x = 75; (75,0) (75, 100)
+lines(x = c(75, 75), y = c(0, 100))
+text(x = 75, y = 108, labels = c("t3"), col = "red")
+# t4: x = 20; (20,0) (20, 75)
+lines(x = c(20, 20), y = c(0, 75))
+text(x = 20, y = 80, labels = c("t4"), col = "red")
+# t5: y=25; (75,25) (100,25)
+lines(x = c(75, 100), y = c(25, 25))
+text(x = 70, y = 25, labels = c("t5"), col = "red")
+
+text(x = (40 + 75)/2, y = 50, labels = c("R1"))
+text(x = 20, y = (100 + 75)/2, labels = c("R2"))
+text(x = (75 + 100)/2, y = (100 + 25)/2, labels = c("R3"))
+text(x = (75 + 100)/2, y = 25/2, labels = c("R4"))
+text(x = 30, y = 75/2, labels = c("R5"))
+text(x = 10, y = 75/2, labels = c("R6"))
+```
+
+![decisio tree](/Users/shubhangisrivastava/Desktop/Decisiontree.png)
+
+
+
+### Q2 Consider the Gini index, classification error, and entropy in a simple classification setting with two classes. Create a single plot that displays each of these quantities as a function of pˆm1. The x- axis should display pˆm1, ranging from 0 to 1, and the y-axis should display the value of the Gini index, classification error, and entropy.
+```{r B, echo=TRUE}
+p = seq(0, 1, 0.01)
+gini = p * (1 - p) * 2
+entropy = -(p * log(p) + (1 - p) * log(1 - p))
+class.err = 1 - pmax(p, 1 - p)
+matplot(p, cbind(gini, entropy, class.err), col = c("red", "green", "yellow"))
+
+
+```
+
+### Q3 In the lab, a classification tree was applied to the Carseats data set af- ter converting Sales into a qualitative response variable. Now we will seek to predict Sales using regression trees and related approaches, treating the response as a quantitative variable.
+### (a) Split the data set into a training set and a test set.
+```{r C1, echo=TRUE}
+library(ISLR)
+data(Carseats)
+set.seed(1)
+
+train = sample(dim(Carseats)[1], dim(Carseats)[1]/2)
+Carseats.train = Carseats[train, ]
+Carseats.test = Carseats[-train, ]
+```
+### (b) Fit a regression tree to the training set. Plot the tree, and inter- pret the results. What test MSE do you obtain?
+```{r C2, echo=TRUE}
+#install.packages("tree")
+library(tree)
+tree.carseats = tree(Sales ~ ., data = Carseats.train)
+summary(tree.carseats)
+
+
+plot(tree.carseats)
+text(tree.carseats, pretty = 0)
+pred.carseats = predict(tree.carseats, Carseats.test)
+mean((Carseats.test$Sales - pred.carseats)^2)
+```
+**Interpretations from output :**
+**The test MSE is about 4.9.**
+
+### (c) Use cross-validation in order to determine the optimal level of tree complexity. Does pruning the tree improve the test MSE?
+```{r C3, echo=TRUE}
+cv.carseats = cv.tree(tree.carseats, FUN = prune.tree)
+par(mfrow = c(1, 2))
+plot(cv.carseats$size, cv.carseats$dev, type = "b")
+plot(cv.carseats$k, cv.carseats$dev, type = "b")
+pruned.carseats = prune.tree(tree.carseats, best = 9)
+par(mfrow = c(1, 1))
+plot(pruned.carseats)
+text(pruned.carseats, pretty = 0)
+pred.pruned = predict(pruned.carseats, Carseats.test)
+mean((Carseats.test$Sales - pred.pruned)^2)
+
+```
+**Interpretations from output :**
+**Pruning the tree in this case increases the test MSE to 4.9.**
+
+### (d) Use the bagging approach in order to analyze this data. What test MSE do you obtain? Use the importance() function to de- termine which variables are most important.
+
+```{r C4, echo=TRUE}
+#install.packages("randomForest")
+library(randomForest)
+bag.carseats = randomForest(Sales ~ ., data = Carseats.train, mtry = 10, ntree = 500, 
+importance = T)
+bag.pred = predict(bag.carseats, Carseats.test)
+mean((Carseats.test$Sales - bag.pred)^2)
+
+importance(bag.carseats)
+```
+**Interpretations from output :**
+**Bagging improves the test MSE to 2.6.We also see that Price,Shelveloc and Age are the three most important predictors of Sale.**
+
+
+### (e) Use random forests to analyze this data. What test MSE do you obtain? Use the importance() function to determine which vari- ables are most important. Describe the effect of m, the number of variables considered at each split, on the error rate obtained.
+
+```{r C5, echo=TRUE}
+rf.carseats = randomForest(Sales ~ ., data = Carseats.train, mtry = 5, ntree = 500, 
+                           importance = T)
+rf.pred = predict(rf.carseats, Carseats.test)
+mean((Carseats.test$Sales - rf.pred)^2)
+importance(rf.carseats)
+```
+**Interpretations from output :**
+**In this case, random forest worsens the MSE on test set to 2.7. Changing m varies test MSE between 2.6 to 3. We again see that Price,Shelveloc and Age are the three most important predictors of Sale.**
+
+
+### Q4 We now use boosting to predict Salary in the Hitters data set.
+### (a) Remove the observations for whom the salary information is unknown, and then log-transform the salaries.
+```{r D1, echo=TRUE}
+library(ISLR)
+sum(is.na(Hitters$Salary))
+Hitters = Hitters[-which(is.na(Hitters$Salary)), ]
+sum(is.na(Hitters$Salary))
+Hitters$Salary = log(Hitters$Salary)
+
+```
+
+### (b) Create a training set consisting of the first 200 observations, and a test set consisting of the remaining observations.
+
+```{r D2, echo=TRUE}
+train = 1:200
+Hitters.train = Hitters[train, ]
+Hitters.test = Hitters[-train, ]
+
+```
+
+### (c) Perform boosting on the training set with 1,000 trees for a range of values of the shrinkage parameter λ. Produce a plot with different shrinkage values on the x-axis and the corresponding training set MSE on the y-axis.
+
+```{r D3, echo=TRUE}
+dim(Hitters)
+dim(Hitters.train)
+
+#install.packages("gbm")
+library(gbm)
+set.seed(103)
+pows = seq(-10, -0.2, by = 0.1)
+lambdas = 10^pows
+length.lambdas = length(lambdas)
+train.errors = rep(NA, length.lambdas)
+test.errors = rep(NA, length.lambdas)
+for (i in 1:length.lambdas) 
+{
+  boost.hitters = gbm(Salary ~ ., data = Hitters.train, distribution = "gaussian", 
+                      n.trees = 1000, shrinkage = lambdas[i])
+  train.pred = predict(boost.hitters, Hitters.train, n.trees = 1000)
+  test.pred = predict(boost.hitters, Hitters.test, n.trees = 1000)
+  train.errors[i] = mean((Hitters.train$Salary - train.pred)^2)
+  test.errors[i] = mean((Hitters.test$Salary - test.pred)^2)
+}
+
+plot(lambdas, train.errors, type = "b", xlab = "Shrinkage", ylab = "Train MSE", 
+     col = "blue", pch = 20)
+```
+
+
+
+### (d) Produce a plot with different shrinkage values on the x-axis and the corresponding test set MSE on the y-axis
+```{r D4, echo=TRUE}
+plot(lambdas, test.errors, type = "b", xlab = "Shrinkage", ylab = "Test MSE", 
+     col = "red", pch = 20)
+
+min(test.errors)
+lambdas[which.min(test.errors)]
+```
+**Interpretations from output :**
+**Minimum test error is obtained at λ=0.05.**
+
+
+### (e) Compare the test MSE of boosting to the test MSE that results from applying two of the regression approaches seen in Chapters 3 and 6.
+```{r D5, echo=TRUE}
+lm.fit = lm(Salary ~ ., data = Hitters.train)
+lm.pred = predict(lm.fit, Hitters.test)
+mean((Hitters.test$Salary - lm.pred)^2)
+library(glmnet)
+set.seed(134)
+x = model.matrix(Salary ~ ., data = Hitters.train)
+y = Hitters.train$Salary
+x.test = model.matrix(Salary ~ ., data = Hitters.test)
+lasso.fit = glmnet(x, y, alpha = 1)
+lasso.pred = predict(lasso.fit, s = 0.01, newx = x.test)
+mean((Hitters.test$Salary - lasso.pred)^2)
+```
+**Interpretations from output :**
+**Both linear model and regularization like Lasso have higher test MSE than boosting.**
+
+
+### (f) Which variables appear to be the most important predictors in the boosted model?
+
+```{r D6, echo=TRUE}
+boost.best = gbm(Salary ~ ., data = Hitters.train, distribution = "gaussian", 
+                 n.trees = 1000, shrinkage = lambdas[which.min(test.errors)])
+summary(boost.best)
+```
+**Interpretations from output :**
+**CatBat,CRBI and CWalks are the three most important variable**
+
+
+### (g) Now apply bagging to the training set. What is the test set MSE for this approach?
+```{r D7, echo=TRUE}
+library(randomForest)
+set.seed(21)
+rf.hitters = randomForest(Salary ~ ., data = Hitters.train, ntree = 500, mtry = 19)
+rf.pred = predict(rf.hitters, Hitters.test)
+mean((Hitters.test$Salary - rf.pred)^2)
+```
+**Interpretations from output :**
+**Test MSE for bagging is about 0.23, which is slightly lower than the best test MSE for boosting.**
+
+
+### Q5. Here we explore the maximal margin classifier on a toy data set.
+### (a) We are given n = 7 observations in p = 2 dimensions. For each observation, there is an associated class label.Sketch the observations.
+
+```{r E1, echo=TRUE}
+x1 = c(3, 2, 4, 1, 2, 4, 4)
+x2 = c(4, 2, 4, 4, 1, 3, 1)
+colors = c("red", "red", "red", "red", "blue", "blue", "blue")
+plot(x1, x2, col = colors, xlim = c(0, 5), ylim = c(0, 5))
+```
+
+### (b) Sketch the optimal separating hyperplane, and provide the equa- tion for this hyperplane
+
+**Interpretations from output :**
+**As shown in the plot, the optimal separating hyperplane has to be between the observations (2,1) and (2,2), and between the observations (4,3) and (4,4). So it is a line that passes through the points (2,1.5) and (4,3.5) which equation is X1−X2−0.5=0.**
+```{r E2, echo=TRUE}
+plot(x1, x2, col = colors, xlim = c(0, 5), ylim = c(0, 5))
+abline(-0.5, 1)
+```
+
+
+
+### (c) Describe the classification rule for the maximal margin classifier. It should be something along the lines of “Classify to Red if β0 + β1X1 + β2X2 > 0, and classify to Blue otherwise.” Provide the values for β0, β1, and β2.
+
+###  Solution: The classification rule is Classify to Red if X1−X2−0.5<0, and classify to Blue otherwise.The values are  β0 is -0.5, β1 is 1  and β2is -1
+
+### (d) On your sketch, indicate the margin for the maximal margin hyperplane.
+
+```{r E4, echo=TRUE}
+plot(x1, x2, col = colors, xlim = c(0, 5), ylim = c(0, 5))
+abline(-0.5, 1)
+abline(-1, 1, lty = 2)
+abline(0, 1, lty = 2)
+```
+
+
+
+### (e) Indicate the support vectors for the maximal margin classifier.
+
+```{r E5, echo=TRUE}
+plot(x1, x2, col = colors, xlim = c(0, 5), ylim = c(0, 5))
+abline(-0.5, 1)
+arrows(2, 1, 2, 1.5)
+arrows(2, 2, 2, 1.5)
+arrows(4, 4, 4, 3.5)
+arrows(4, 3, 4, 3.5)
+```
+
+
+
+
+### (f) Argue that a slight movement of the seventh observation would not affect the maximal margin hyperplane.
+
+
+### Solution A slight movement of observation (4,1) blue would not have an effect on the maximal margin hyperplane since its movement would be outside of the margin.
+
+### (g) Sketch a hyperplane that is not the optimal separating hyper- plane, and provide the equation for this hyperplane.
+
+###  −0.8−X1+X2>0
+```{r E7, echo=TRUE}
+plot(x1, x2, col = colors, xlim = c(0, 5), ylim = c(0, 5))
+abline(-0.8, 1)
+```
+
+
+
+
+### (h) Draw an additional observation on the plot so that the two classes are no longer separable by a hyperplane.
+
+```{r E8, echo=TRUE}
+plot(x1, x2, col = colors, xlim = c(0, 5), ylim = c(0, 5))
+points(c(4), c(2), col = c("red"))
+```
