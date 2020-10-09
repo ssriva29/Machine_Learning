@@ -1,0 +1,429 @@
+---
+title: "IDS575_Assignmenet_5"
+author: "Shubhangi Srivastava"
+date: "01/12/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Q1 In this problem, you will use support vector approaches in order to predict whether a given car gets high or low gas mileage based on the Auto data set.
+
+### (a) Create a binary variable that takes on a 1 for cars with gas mileage above the median, and a 0 for cars with gas mileage below the median.
+
+```{r 1A, echo=TRUE}
+library(ISLR)
+attach(Auto)
+bin <- ifelse(Auto$mpg > median(Auto$mpg) , 1, 0)
+
+Auto$mpglevel <- as.factor(bin)
+```
+
+### (b) Fit a support vector classifier to the data with various values of cost, in order to predict whether a car gets high or low gas mileage. Report the cross-validation errors associated with different values of this parameter. Comment on your results.
+
+```{r 1B, echo=TRUE}
+set.seed(1234)
+library(caret)
+library(e1071)
+
+autosample <- sample(1:nrow(Auto), nrow(Auto)/2)
+train_data <- Auto[autosample,]
+test_data <- Auto[-autosample,]
+
+svm_model <-tune(svm, mpglevel ~ ., data = train_data, kernel = "linear", ranges = list(cost = c(0.01, 0.1, 1, 5, 10)))
+summary(svm_model)
+```
+
+**Interpretations from output:**
+
+**From above results we can see at cost 5 and 10 we get least errror of 0.015**
+
+### (c) Now repeat (b), this time using SVMs with radial and polynomial basis kernels, with different values of gamma and degree and cost. Comment on your results.
+
+```{r 1C, echo=TRUE}
+svm_polynomial <-tune(svm, mpglevel ~ ., data = train_data, kernel = "polynomial", ranges = list(cost = c(0.01, 0.1, 1, 5, 10),degree=c(2,3,4,5)))
+summary(svm_polynomial)
+svm_radial <-tune(svm, mpglevel ~ ., data = train_data, kernel = "radial", ranges = list(cost = c(0.01, 0.1, 1, 5, 10),gamma=c(0.01,0.1,1,5,10,100)))
+summary(svm_radial)
+```
+
+
+**Interpretations from output:**
+
+**From above summaries, we can see that for polynomial model performs best for 0.01 and degree 2and for radial kernal its best for cost 5 and gamma 0.1.**
+
+### (d) Make some plots to back up your assertions in (b) and (c).
+
+```{r 1D1, echo=TRUE}
+plot(svm_model)
+plot(svm_polynomial)
+plot(svm_radial)
+
+```
+```{r 1D2, echo=TRUE}
+len<-2:(ncol(Auto)-2)
+
+svm_mod_lin_1<-svm(mpglevel~.,data=Auto,kernel="linear",cost=5)
+svm_mod_pol_1<-svm(mpglevel~.,data=Auto,kernel="polynomial",cost=0.01,degree=2)
+svm_mod_rad_1<-svm(mpglevel~.,data=Auto,kernel="radial",cost=5,gamma=0.1)
+
+for(i in len){
+  plot(svm_mod_lin_1, Auto, as.formula(paste("mpg~",names(Auto)[i])))
+}
+
+for(i in len){
+  plot(svm_mod_pol_1, Auto, as.formula(paste("mpg~",names(Auto)[i])))
+}
+
+for(i in len){
+  plot(svm_mod_rad_1, Auto, as.formula(paste("mpg~",names(Auto)[i])))
+}
+```
+
+
+
+
+### Q2 In this problem, you will perform K-means clustering manually, with K = 2, on a small example with n = 6 observations and p = 2 features. The observations are as follows.
+
+
+```{r Q2 , echo=TRUE}
+c2 = c(1:6)
+c3 = c(1,1,0,5,6,4)
+c4 = c(4,3,4,1,2,0)
+library(knitr)
+library(kableExtra)
+
+dataSet = data.frame( Observation = c2, X1= c3, X2 = c4)
+kable(dataSet) %>% kable_styling(bootstrap_options = c("striped", "hover"), font_size =  10.5 , position = "center")
+
+```
+### (a) Plot the observations
+```{r 2A , echo=TRUE}
+plot(c3, c4, type="p", main = "Scatterplot")
+```
+
+
+### (b) Randomly assign a cluster label to each observation. You can use the sample() command in R to do this. Report the cluster labels for each observation.
+```{r 2B , echo=TRUE}
+set.seed(124564)
+obsdata <- cbind(c3,c4)
+clustlabel <- sample(x = 2, size = nrow(obsdata), replace = TRUE)
+clustlabel
+
+plot(obsdata[clustlabel == 1, 1], obsdata[clustlabel == 1, 2], col = 4, pch = 20, cex = 3,
+     xlim = c(0, 6))
+points(obsdata[clustlabel == 2, 1], obsdata[clustlabel == 2, 2], col = 3, pch = 20, cex = 3)
+
+```
+
+
+
+### (c) Compute the centroid for each cluster.
+```{r 2C , echo=TRUE}
+plot(obsdata[clustlabel == 1, 1], obsdata[clustlabel == 1, 2], col = 4, pch = 20, cex = 3,
+     xlim = c(0, 6))
+points(obsdata[clustlabel == 2, 1], obsdata[clustlabel == 2, 2], col = 3, pch = 20, cex = 3)
+
+centroid1 <- c(mean(obsdata[clustlabel == 1, 1]), mean(obsdata[clustlabel == 1, 2]))
+centroid2 <- c(mean(obsdata[clustlabel == 2, 1]), mean(obsdata[clustlabel == 2, 2]))
+
+centroid1
+centroid2
+
+points(centroid1[1], centroid1[2], col = 4, pch = 4)
+points(centroid2[1], centroid2[2], col = 3, pch = 4)
+
+```
+
+
+
+### (d) Assign each observation to the centroid to which it is closest, in terms of Euclidean distance. Report the cluster labels for each observation.
+```{r 2D , echo=TRUE}
+distance <- function (x, y){
+  return(sqrt((x[1] - y[1])^2 + (x[2] - y[2])^2))
+}
+
+# obs 1:
+distance(obsdata[1,], centroid1)
+distance(obsdata[1,], centroid2)
+clustlabel[1] <- 2
+
+# obs 2:
+distance(obsdata[2,], centroid1)
+distance(obsdata[2,], centroid2)
+clustlabel[2] <- 2
+
+# obs 3:
+distance(obsdata[3,], centroid1)
+distance(obsdata[3,], centroid2)
+clustlabel[3] <-2
+
+
+# obs 4:
+distance(obsdata[4,], centroid1)
+distance(obsdata[4,], centroid2)
+clustlabel[4] <- 1
+
+# obs 5:
+
+distance(obsdata[5,], centroid1)
+distance(obsdata[5,], centroid2)
+# This observation is closer to centroid 2.
+
+clustlabel[5] <- 2
+
+# obs 6:
+
+distance(obsdata[6,], centroid1)
+distance(obsdata[6,], centroid2)
+clustlabel[6] <- 1
+```
+### (e) Repeat (c) and (d) until the answers obtained stop changing
+```{r 2E, echo=TRUE}
+plot(obsdata[clustlabel == 1, 1], obsdata[clustlabel == 1, 2], col = 4, pch = 20, cex = 3,
+     xlim = c(0, 6), ylim = c(0,6))
+points(obsdata[clustlabel == 2, 1], obsdata[clustlabel == 2, 2], 
+       col = 3, pch = 20, cex = 3)
+
+centroid1 <- c(mean(obsdata[clustlabel == 1, 1]), mean(obsdata[clustlabel == 1, 2]))
+centroid2 <- c(mean(obsdata[clustlabel == 2, 1]), mean(obsdata[clustlabel == 2, 2]))
+
+points(centroid1[1], centroid1[2], col = 4, pch = 4)
+points(centroid2[1], centroid2[2], col = 3, pch = 4)
+```
+
+```{r 2E1, echo=TRUE}
+obs <- obsdata
+# For observation 1:
+distance(obs[1,], centroid1)
+distance(obs[1,], centroid2)
+
+# This observation is closer to centroid 1.
+
+clustlabel[1] <- 2
+
+# For observation 2:
+distance(obs[2,], centroid1)
+distance(obs[2,], centroid2)
+clustlabel[2] <- 2
+
+# For observation 3:
+distance(obs[3,], centroid1)
+distance(obs[3,], centroid2)
+
+# This observation is closer to centroid 1.
+
+clustlabel[3] <- 2
+
+# For observation 4:
+distance(obs[4,], centroid1)
+distance(obs[4,], centroid2)
+
+# This observation is closer to centroid 2.
+
+clustlabel[4] <- 1
+
+# For observation 5:
+distance(obs[5,], centroid1)
+distance(obs[5,], centroid2)
+
+clustlabel[5] <- 1
+
+# For observation 6:
+
+distance(obs[6,], centroid1)
+distance(obs[6,], centroid2)
+clustlabel[6] <- 1
+
+plot(obs[clustlabel == 1, 1], obs[clustlabel == 1, 2], col = 4, pch = 20, cex = 3,
+     xlim = c(0, 6), ylim = c(0, 6))
+points(obs[clustlabel == 2, 1], obs[clustlabel == 2, 2], 
+       col = 3, pch = 20, cex = 3)
+
+centroid1 <- c(mean(obs[clustlabel == 1, 1]), mean(obs[clustlabel == 1, 2]))
+centroid2 <- c(mean(obs[clustlabel == 2, 1]), mean(obs[clustlabel == 2, 2]))
+
+points(centroid1[1], centroid1[2], col = 4, pch = 4)
+points(centroid2[1], centroid2[2], col = 5, pch = 4)
+```
+
+```{r 2E2, echo=TRUE}
+# For observation 1:
+distance(obs[1,], centroid1)
+distance(obs[1,], centroid2)
+
+# This observation is closer to centroid 1.
+
+clustlabel[1] <- 2
+
+# For observation 2:
+distance(obs[2,], centroid1)
+distance(obs[2,], centroid2)
+clustlabel[2] <- 2
+
+# For observation 3:
+distance(obs[3,], centroid1)
+distance(obs[3,], centroid2)
+
+# This observation is closer to centroid 1.
+
+clustlabel[3] <- 2
+
+# For observation 4:
+distance(obs[4,], centroid1)
+distance(obs[4,], centroid2)
+
+# This observation is closer to centroid 2.
+
+clustlabel[4] <- 1
+
+# For observation 5:
+distance(obs[5,], centroid1)
+distance(obs[5,], centroid2)
+
+clustlabel[5] <- 1
+
+# For observation 6:
+
+distance(obs[6,], centroid1)
+distance(obs[6,], centroid2)
+clustlabel[6] <- 1
+
+plot(obs[clustlabel == 1, 1], obs[clustlabel == 1, 2], col = 4, pch = 20, cex = 3,
+     xlim = c(0, 6), ylim = c(0, 6))
+points(obs[clustlabel == 2, 1], obs[clustlabel == 2, 2], 
+       col = 3, pch = 20, cex = 3)
+
+centroid1 <- c(mean(obs[clustlabel == 1, 1]), mean(obs[clustlabel == 1, 2]))
+centroid2 <- c(mean(obs[clustlabel == 2, 1]), mean(obs[clustlabel == 2, 2]))
+
+points(centroid1[1], centroid1[2], col = 4, pch = 4)
+points(centroid2[1], centroid2[2], col = 5, pch = 4)
+```
+
+
+**Clusters stopped changing at this point**
+
+### f) In your plot from (a), color the observations according to the cluster labels obtained.**
+
+```{r 2F, echo=TRUE}
+plot(obs[clustlabel == 1, 1], obs[clustlabel == 1, 2], col = 4, pch = 20, cex = 3,
+     xlim = c(0, 6), ylim = c(0, 4))
+points(obs[clustlabel == 2, 1], obs[clustlabel == 2, 2], 
+       col = 3, pch = 20, cex = 3)
+```
+
+### Problem 3: In this problem, you will generate simulated data, and then perform PCA and K-means clustering on the data.
+
+
+
+### a) Generate a simulated data set with 20 observations in each ofthree classes (i.e. 60 observations total),and 50 variables.
+
+```{r 3A, echo=TRUE}
+set.seed(1234)
+data_prob_3<-matrix(sapply(1:3,function(y){rnorm(20*50,mean = 20*sqrt(y))}),ncol=50)
+
+data_class<-unlist(lapply(1:3, function(y){rep(y,20)}))
+```
+
+
+
+
+### b) Perform PCA on the 60 observations and plot the first two principal component score vectors. Use a different color to indicate the observations in each of the three classes. If the three classes appear separated in this plot, then continue on to part (c). If not, then return to part (a) and modify the simulation so that there is greater separation between the three classes. Do not continue to part (c) until the three classes show at least some separation in the first two principal component score vectors.
+
+```{r 3B, echo=TRUE}
+pca_op_3<-prcomp(data_prob_3)
+
+plot(pca_op_3$x[,c(1:2)],col=data_class,pch=19)
+```
+
+**Interpretations from output:**
+**From the above plot, we can see that the three classes appear tobe separated, hence, we can go ahead and use kmeans to cluster the observations.**
+
+###  c) Perform K-means clustering of the observations with K = 3. How well do the clusters that you obtained in K-means clustering compare to the true class labels?
+
+```{r 3C, echo=TRUE}
+actual_class<-data_class
+
+set.seed(123)
+
+kmeans_cluster<-kmeans(data_prob_3,3)
+table(actual_class,kmeans_cluster$cluster)
+
+kmeans_cluster_sets<-kmeans(data_prob_3,3,nstart = 10)
+table(actual_class,kmeans_cluster_sets$cluster)
+
+plot(pca_op_3$x[,c(1:2)],col=kmeans_cluster_sets$cluster,pch=19)
+```
+
+**Interpretations from output:**
+**From the above summary we can see that with nstart=1 (single set) some observations were not clusetered as expected and their was some overlap, however, with nstart=10, we can see that the data points are clustered perfectly(also visible from the plot).**
+
+### d) Perform K-means clustering with K = 2. Describe your results.
+
+```{r 3D, echo=TRUE}
+set.seed(123)
+
+# k=2 without nstart
+kmeans_cluster_k2<-kmeans(data_prob_3,2)
+table(actual_class,kmeans_cluster_k2$cluster)
+
+# Clustering with nstart=10
+kmeans_cluster_k2_sets<-kmeans(data_prob_3,2,nstart=10)
+table(actual_class,kmeans_cluster_k2_sets$cluster)
+
+plot(pca_op_3$x[,c(1:2)],col=kmeans_cluster_k2_sets$cluster,pch=19)
+```
+
+**Interpretations from output:**
+**From the above summaries and plot, we can see that on using k=2, all the data points in cluster 1 and cluster 2 have been absorbed in a single cluster whereas cluster 3 remains as it was earlier.**
+
+### e) Now perform K-means clustering with K = 4, and describe your results.
+
+```{r 3E, echo=TRUE}
+# k=4 without nstart
+kmeans_cluster_k4<-kmeans(data_prob_3,4)
+table(actual_class,kmeans_cluster_k4$cluster)
+
+# Clustering with nstart=10
+kmeans_cluster_k4_sets<-kmeans(data_prob_3,4,nstart=10)
+table(actual_class,kmeans_cluster_k4_sets$cluster)
+
+plot(pca_op_3$x[,c(1:2)],col=kmeans_cluster_k4_sets$cluster,pch=19)
+```
+
+**Interpretations from output:**
+**From the above summaries and plot, we can see that cluster 1 is splitted into two clusters whereas cluster 2 and 3 remain the same.**
+
+### f) Now perform K-means clustering with K = 3 on the first two principal component score vectors, rather than on the raw data. That is, perform K-means clustering on the 60 × 2 matrix of which the first column is the first principal component score vector, and the second column is the second principal component score vector. Comment on the results.
+
+```{r 3F, echo=TRUE}
+# k=3 on first two principal components
+kmeans_cluster_pca_1_2<-kmeans(pca_op_3$x[,c(1:2)],3)
+table(actual_class,kmeans_cluster_pca_1_2$cluster)
+
+# k=3 with nstart=10 on first two principal components
+kmeans_cluster_pca_1_2_sets<-kmeans(pca_op_3$x[,c(1:2)],3,nstart = 10)
+table(actual_class,kmeans_cluster_pca_1_2_sets$cluster)
+
+plot(pca_op_3$x[,c(1:2)],col=kmeans_cluster_pca_1_2_sets$cluster,pch=19)
+```
+
+**Interpretations from output:**
+**From the above summaries and plot, we can say that the algorithm performs good on the first two principal components as the observations are perfectly clustered.**
+
+### g) Using the scale() function, perform K-means clustering with K = 3 on the data after scaling each variable to have standard deviation one. How do these results compare to those obtained in (b)? Explain.
+
+```{r 3G, echo=TRUE}
+kmeans_cluster_scaled<-kmeans(scale(data_prob_3,center = T,scale = T),3,nstart=5)
+table(actual_class,kmeans_cluster_scaled$cluster)
+
+plot(pca_op_3$x[,c(1:2)],col=kmeans_cluster_scaled$cluster,pch=19)
+```
+
+**Interpretations from output:**
+**From the above summary and plot, we see that their is some overlap in all the clusters, hence, the clustering algorithm is performing poorly because scaling affects the distance between the data points.**
+
+
